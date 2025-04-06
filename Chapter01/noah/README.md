@@ -84,4 +84,4 @@ fun modift(value: Any) {
 > 코드를 컴파일 할 때 명시적으로 -include-runtime을 호출해 jar 파일 안에 런타임 라이브러리를 포함
 >
 
-![image.png](attachment:c9728ebb-de49-424a-b2e9-0bedfe63dcdd:image.png)
+![코틀린 컴파일](./kotlin-compile.png)
