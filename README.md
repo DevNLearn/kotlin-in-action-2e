@@ -81,8 +81,8 @@
 
 | chapter |      date      |  발표자  |   질문   |
 |:-------:|:--------------:|:-----:|:------:|
-| chap 1  | 2025.04.08 (화) |       | [링크](https://github.com/DevNLearn/kotlin-in-action-2-e/discussions/1) |
-| chap 2  | 2025.04.08 (화) |       | [링크]() |
+| chap 1  | 2025.04.08 (화) |  Kevin | [링크](https://github.com/DevNLearn/kotlin-in-action-2-e/discussions/1) |
+| chap 2  | 2025.04.08 (화) |  Kevin | [링크]() |
 | chap 3  | 2025.04.15 (화) |       | [링크]() |
 | chap 4  | 2025.04.15 (화) |       | [링크]() |
 | chap 5  | 2025.04.22 (화) |       | [링크]() |
