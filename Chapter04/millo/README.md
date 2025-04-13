@@ -358,3 +358,150 @@ class User {
         private set // 세터는 private으로 설정
 }
 ```
+
+## 데이터 클래스
+### 모든 클래스가 정의해야 하는 메서드
+**`toString()`**
+- 객체 출력 메서드로 기본적으로 `클래스이름@객체주소` 형태로 출력된다
+- 쓸만하게 바꾸려면 객체의 필요한 프로퍼티 값을 문자열로 변환해 출력하도록 오버라이딩 해줘야 한다
+
+**`equals()`**
+- 객체 비교 메서드로 기본적으로 객체 주소를 비교하는데 상황에 따라 객체의 프로퍼티 값을 비교하도록 오버라이딩 해줘야 한다
+- 자바에서는 `==`를 기본 타입과 참조 타입 비교 시 사용하는데 코틀린은 `==`를 객체 비교에 사용하고 `===`를 참조 타입 비교에 사용한다
+  - 내부적으로 `==`는 `equals()` 메서드를 호출하고 `===`는 자바와 동일하게 참조 타입 비교를 한다
+  - 그래서 `equals()` 메서드를 요구사항대로 오버라이드하고 `==`을 사용해 비교하면 된다
+
+**`hashCode()`**
+- `equals()`만 오버라이드하면 두 객체가 논리적으로 같더라도 서로 다른 해시 코드를 가질 수 있다
+- JVM 언어에서는 `equals()`가 true를 반환하는 두 객체는 반드시 같은 해시 코드를 가져야 한다는 규정이 있으므로 `hashCode()`도 오버라이드 해줘야 한다
+  - 이 규정을 지키지 않으면 해시 기반 컬렉션에서 문제가 발생할 수 있다
+  - 예를 들어 HashSet에서 키로 사용되는 객체의 해시 코드가 다르면 같은 키로 인식하지 못해 값을 찾지 못할 수 있다
+    - hashSet은 원소 비교 시 비용을 줄이기 위해 먼저 해시코드를 비교하고, 해시코드가 같을 때만 `equals()` 메서드를 호출한다
+  ```kotlin
+  fun main() {
+      val processed = hashSetOf(User("Millo", 241125))
+      println(processed.contains(User("Millo", 241125))) // 다른 해시코드로 false
+  }
+  ```
+- 해시 코드는 `equals()`와 마찬가지로 프로퍼티 값을 기반으로 계산해야 한다
+
+### 이 3가지 필수 메서드를 자동으로 생성해주는 data class
+- data class는 이 `toString()`, `equals()`, `hashCode()` 메서드를 컴파일러가 자동으로 생성해준다
+- `toString()`은 각 프로퍼티 선언 순서대로 `클래스명(프로퍼티=값)` 형태로 출력된다
+- `equals()`와 `hashCode()`는 주 생성자에 나열된 모든 프로퍼티를 기반으로 생성된다
+```kotlin
+data class Customer(
+    val name: String,
+    val postalCode: Int,
+)
+
+fun main() {
+    val c1 = Customer("Sam", 11111)
+    val c2 = Customer("Mart", 22222)
+    val c3 = Customer("Sam", 11111)
+  
+    println(c1)     // Customer(name=Sam, postalCode=11111)
+    println(c1 == c2) // false
+    println(c1 == c3) // true
+    println(c1.hashCode()) // 11111
+    println(c2.hashCode()) // 22222
+}
+```
+
+**data class와 불변성: `copy()`**
+- data class는 불변성을 보장하기 위해 `val`로 선언된 프로퍼티만 가지도록 권장한다
+  - 물론 `var` 프로퍼티도 가능은 하다
+- 특히 HashMap 등의 컨테이너에 data class 객체를 담고 이후에 변경이 되어버리면 컨테이너가 잘못될 수 있어 불변성이 필수적이다
+- 또한 다중 스레드 환경에서 불변성은 스레드 안전성을 보장하기 때문에 필수적이다
+- 이렇게 불변 객체로 유지하면서 더 쉽게 사용할 수 있도록 코틀린 컴파일러는 `copy()` 메서드를 자동으로 생성해준다
+  - 객체를 복사하면서 일부 프로퍼티를 바꿀 수 있게 해주는 메서드로 객체를 메모리에서 직접 바꾸는 것이 아니라 복사본을 만들어준다
+  - 원본과 다른 생명주기를 가지고, 원본에 영향을 전혀 미치지 않기 때문에 불변성을 보장할 수 있다
+  - 실제로로 디컴파일 해보면 `copy()` 메서드는 `data class`의 모든 프로퍼티를 파라미터로 받는 생성자를 호출하는 형태로 구현되어 있다
+  ```java
+   @NotNull
+   public final Customer copy(@NotNull String name, int postalCode) {
+      Intrinsics.checkNotNullParameter(name, "name");
+      return new Customer(name, postalCode);
+   }
+  ```
+
+**자바 record와의 차이점**
+- 둘 다 `toString()`, `equals()`, `hashCode()` 메서드를 자동으로 생성해준다
+- 다만 자바 record가 data class보다 더 많은 제약이 있다
+  - 모든 프로퍼티가 `private final`로 선언되어야 한다
+  - 상위 클래스를 확장할 수 없다
+  - 클래스 본문 안에서 다른 프로퍼티를 정의할 수 없다
+- data class는 자바 record보다 더 유연하게 사용할 수 있다
+  - 프로퍼티를 `var`로 선언할 수 있다
+  - 상위 클래스를 확장할 수 있다
+  - 클래스 본문 안에서 다른 프로퍼티를 정의할 수 있다
+  - `copy()` 메서드를 제공한다
+
+### 클래스 위임: `by` 키워드
+- 구현 상속은 상위 클래스의 세부 구현 사항에 의존하게 되면서 예측하지 못한 경우가 생겨 시스템의 취약점이 될 수 있다
+- 따라서 코틀린은 기본적으로 클래스를 `final`로 선언해 상속을 막고, 상속이 필요한 경우에는 `open` 키워드를 붙여 상속을 허용한다
+
+**상속을 허용하지 않는 클래스에 새로 로직을 추가하고 싶은 경우** 
+
+방법 1) 데코레이터 패턴 적용
+```kotlin
+class DelegatingCollection<T> : Collection<T> {
+    private val innerList = arrayListOf<T>()
+  
+    override val size: Int
+        get() = innerList.size
+  override fun isEmpty(): Boolean = innerList.isEmpty()
+  override fun contains(element: T): Boolean = innerList.contains(element)
+  override fun iterator(): Iterator<T> = innerList.iterator()
+  override fun containsAll(elements: Collection<T>): Boolean = innerList.containsAll(elements)
+}
+```
+- 대신 사용할 수 있는 새로운 클래스(데코레이터) 생성
+- 기존 클래스와 같은 인터페이스를 데코레이터가 제공하고 기존 클래스를 테코레이터 내부로 유지한다
+- 기존 클래스의 메서드를 오버라이드해 새로운 로직을 추가
+  - 기존 기능이 그대로 필요한 부분은 데코레이터의 메서드가 기존 클래스의 메서드에게 요청을 전달
+
+방법 2) 코틀린 언어가 일급 시민 기능으로 지원하는 위임
+```kotlin
+class DelegatingCollection<T>(
+    innerList: Collection<T> = arrayListOf()
+) : Collection<T> by innerList { // Collection<T> 인터페이스를 위임
+    // 추가적인 로직 작성
+}
+```
+- `by` 키워드를 사용해 위임할 인터페이스를 지정하고, 위임할 객체를 생성자 파라미터로 받는다
+- 이렇게 하면 `Collection<T>` 인터페이스의 모든 메서드가 `innerList` 객체에게 위임된다
+- 위임되면 컴파일러가 자동으로 `Collection<T>` 인터페이스의 메서드를 오버라이드해준다
+
+**클래스 위임 예제**
+- 원소 추가 횟수를 기록하는 컬렉션
+- 원소 개수 카운팅만 오버라이드하고 나머지는 내부 컨테이너(innerSet)에게 위임한다
+
+```kotlin
+class CountingSet<T>(
+  private val innerSet: MutableCollection<T> = hashSetOf(),
+) : MutableCollection<T> by innerSet {
+  var objectsAdded = 0
+
+  // 위임하지 않고 새로 구현할 메서드는 override
+  override fun add(element: T): Boolean {
+    objectsAdded++
+    return innerSet.add(element)
+  }
+
+  override fun remove(element: T): Boolean {
+    objectsAdded--
+    return innerSet.remove(element)
+  }
+}
+
+fun main() {
+  val cset = CountingSet<Int>()
+  cset.addAll(listOf(1, 1, 2))
+  println("Added ${cset.objectsAdded} objects, ${cset.size} uniques.")
+  // Added 3 objects, 2 uniques.
+}
+```
+
+### `object` 키워드: 클래스 선언과 인스턴스 언언을 한꺼번에?!
+
