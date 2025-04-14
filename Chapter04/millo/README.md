@@ -503,5 +503,149 @@ fun main() {
 }
 ```
 
-### `object` 키워드: 클래스 선언과 인스턴스 언언을 한꺼번에?!
+### `object` 키워드: 클래스 선언과 인스턴스 선언을 한꺼번에?!
+클래스를 정의하는 동시에 인스턴스(객체)를 생성할 수 있다
+
+**1. 객체 선언: 싱글턴 쉽게 만들기**
+- 객체 선언이란? 클래스 선언와 그 클래스에 속한 단일 인스턴스의 선언을 합친 선언
+- 자바는 클래스의 생성자를 `private`로 제한하고 정적인 필드에 그 클래스의 유일한 객체를 저장하는 싱글턴 패턴 사용
+- 코틀린은 `object` 키워드를 통한 객체 선언 기능으로 싱글턴을 언어에서 기본 지원
+- 특정 인터페이스를 구현해야 하는데 그 구현 내부에 다른 상태가 필요하지 않은 경우 유용하다
+  - ex) `Comparator` 인터페이스는 데이터를 저장할 필요 없어서 `object`로 싱글턴으로 구현해 해당 인스턴스를 프로그램 전반에서 활용
+  ```kotlin
+  data class Person(val name: String) {
+      object NameComparator : Comparator<Person> {
+        override fun compare(p1: Person, p2: Person) = p1.name.compareTo(p2.name)
+      }
+  }
+  
+  fun main() {
+      val persons = listOf(Person("Bob"), Person("Alice"))
+      println(persons.sortedWith(Person.NameComparator))
+      // [Person(name=Alice), Person(name=Bob)]
+  }
+  ```
+- 자바에서 코틀린 `object`를 쓰려면 정적인 `INSTANCE` 필드를 사용하면 된다
+  - `Person.NameComparator.INSTANCE.compare(p1, pe)`
+
+**싱글턴과 객체 선언(`object`)의 한계**
+- 하나의 객체를 싱글톤으로 유지하기 때문에 프로그램이 처음 접근할 때 초기화되어 객체 생성 시점을 제어할 수 없다
+- `object`는 생성자를 정의할 수 없어서 초기화하거나 의존성을 주입할 수 없다
+- `object`는 상위 클래스를 상속할 수 없고, 인터페이스를 구현할 수 없다
+
+
+**2. 동반 객체: 팩토리 메서드 + 정적 멤버**
+- 코틀린은 자바 `static` 키워드를 지원하지 않기 때문에 클래스 안에 정적인 멤버가 없다
+- 대신 동반 객체를 뜻하는 `companion object`를 사용해 정적 멤버를 만들 수 있다
+  - `static`과 비슷하게 클래스와 동행하는 유일한 오브젝트라는 뜻으로 감싸고 있는 클래스명으로 접근할 수 있다
+  - 객체로 간주되기 때문에 이름을 붙여줄 수도, 인터페이스를 구현할 수 있다
+- 클래스의 인스턴스와 관계없이 호출해야 하지만 클래스 내부 정보에 접근해야 함수가 필요할 때 사용한다
+  - 바깥쪽 클래스의 모든 `private` 멤버에 접근할 수 있어서 `private` 생성자도 호출할 수 있기 때문에 팩토리 패턴을 구현하기 좋다 
+  - 유틸성 함수는 내포 동행 객체보단 최상단 파일에 두는 게 낫다
+
+**Java ver**
+```java
+public class User {
+    // 정적 상수
+    private static final int MIN_AGE = 1;
+    
+    private String name;
+    private int age;
+    
+    // private 생성자
+    private User(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+    
+    // 정적 팩토리 메서드
+    public static User newBaby(String name) {
+        return new User(name, MIN_AGE);
+    }
+}
+```
+
+**Kotlin ver**
+```kotlin
+class User private constructor(
+    var name: String,
+    var age: Int,
+) {
+    companion object {  
+         const val MIN_AGE = 1  // 정적 상수
+         fun newBaby(name: String) = User(name, MIN_AGE)    // 정적 팩토리 메서드 역할
+    }
+}
+```
+- 자바와 다르게 동반 객체는 자신에 대응하는 클래스에 속하기 때문에 해당 클래스의 인스턴스는 동반 객체의 멤버에 접근할 수 없다
+
+**부 생성자들을 사용하기 보단 동행 객체 안에서 다양한 팩토리 메서드를 제공하자**
+```kotlin
+class User private constructor(val nickname: String) {
+    companion object {
+        fun newSubscribingUser(email: String) = User(email.substringBefore('@'))
+        fun newSocialUser(accountId: Int) = User(getNameFromSocialNetwork(accountId))
+    }
+}
+```
+
+**3. 익명 내부 클래스**
+- Java에서 인터페이스를 일회성으로 사용하고 싶을 때 익명 클래스를 사용하곤 했다
+- 코틀린은 `object : 타입` 키워드를 사용해 익명 내부 클래스를 만들 수 있다
+  - 타입을 상속받은 `object`를 만든다고 생각하면 쉽다
+```kotlin
+interface MouseListener {
+    fun onEnter()
+    fun onClick()
+}
+
+class Button(private val listener: MouseListener) { /* ... */ }
+
+fun main() {
+    // 자바와 다르게 final이 아닌 변수도 객체 식 안에서 사용하거나 변경할 수 있다
+    var clickCount = 0
+    
+    Button(object: MouseListener {
+        override fun onEnter() { println("Mouse Enter") }
+        override fun onClick() { 
+            clickCount++
+            println("Mouse Click") 
+        }
+    })
+}
+```
+
+## 인라인 클래스
+- 클래스를 파라미터로 받으면 호출할 때마다 객체가 생성되고, 버려지기 때문에 오버헤드 발생
+- 인라인 클래스를 사용하면 성능을 희생하지 않고 타입 안정성을 얻을 수 있다
+- 함수가 호출되는 대신 함수를 호출한 지점에 함수 본문을 그대로 복붙해서 사용하는 방식
+  - 실행 시점에 감싸진 프로퍼티로 대체, 즉 사용되는 지점에 인라인된다
+```kotlin
+interface PrettyPrintable {
+    fun prettyPrint()
+}
+
+// Int를 감싼 UseCent 인라인 클래스 -> 센트 타입 안정성
+@JvmInline
+value class UsdCent(val amount: Int) : PrettyPrintable {
+  val salesTax
+    get() = amount * 0.06
+  
+  override fun prettyPrint() {
+        println("$amount cents")
+    }
+}
+
+fun main() {
+  // UsdCent 객체 생성, 컴파일 후에는 Int로 변환되므로 오버헤드 줄여 성능 최적화
+  val expense = UsdCent(1_99) // 컴파일 이후 Int로 취급 
+    println(expense.salesTax) // expense.salesTax는 199 * 0.06으로 인라인
+    // 11.94
+  
+    expense.prettyPrint()   // println("199 cents")로 인라인
+}
+```
+
+> 코틀린 라이브러리는 이미 최적화가 되어 있기 때문에 적절하게 inline 함수가 붙어있다고 한다
+
 
