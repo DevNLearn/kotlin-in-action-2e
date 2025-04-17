@@ -214,10 +214,109 @@ fun isFileNode(node: Node){
 ---
 
 ### 클래스 생성
+
+#### 주생성자
 - 코틀린에서의 클래스는 주 생성자와 부 생성자가 나뉜다.
-- 주 생성자는 클래스 선언과 동시에 생성자를 만드는 형식이다
+- 주 생성자로 선언하는 방식은 여러가지가 존재한다
 
 ```kotlin
+// 1
 class User(val name: String)
+
+// 2
+class User(val name: String = "babi")
+
+// 3
+class User(_name: String){
+  val name = _name
+}
+
+// 4
+class User(_name: String){
+  val name: String
+  
+  init {
+      name = _name
+  }
+}
 ```
 
+- 그리고 클래스를 정의할때 디폴트 생성자를 자동으로 만들어준다. 
+- 상속받을때는 항상 생성자를 호출해야하기때문에 빈 괄호가 들어간다.
+- 인터페이스는 생성자가 없으니 괄호가 없다.
+
+---
+
+#### 부생성자
+- 일반적으로 코틀린에서는 디폴트 파라미터와 이름붙은 인자로 부생성자를 사용할일이 적다.
+- 하지만 다음과 같은 방식으로 부생성자도 만들수있다
+```kotlin
+class Downloader {
+    constructor(url: String?){
+        
+    }
+}
+```
+
+---
+
+#### 인터페이스의 프로퍼티
+- 인터페이스에서 선언된 프로퍼티는 상속받은 하위 클래스에서 오버라이드 해줘야한다.
+- 예를들면 다음처럼 볼 수 있다
+```kotlin
+// 인터페이스에 선언된 프로퍼티
+interface User {
+    val nickname: String
+}
+
+// 1
+class PrivateUser(override val nickname: String) : User
+
+// 2
+class SubscribingUser(val email: String) : User {
+    override val nickname: String
+    get() = email.substringBefore('@')
+}
+
+// 3
+class SocialUser(val accountId: Int) : User {
+    override val nickname = getFacebookName(accountId)
+}
+
+fun getFacebookName(accountId: Int) = "kodee$accountId"
+```
+- 위 예제에서 2번은 getter 로 호출할때 마다 `substringBefore` 이라는 함수를 호출하게 되고, 3번은 초기화시 계산하여 필드에 저장해서 불러오는 방식이다
+- 예전에 2장했을때 메서드를 사용하지 커스텀 getter 를 사용하는 이유에 대해 토론한적이 있었는데 하나같이 메서드를 사용한다고 했었다. 하지만 커스텀 getter의 차이점은 다음과 같다
+  - 예외를 던지지 않음
+  - 계산 비용이 적게 듬 (최초 실행한 결과가 캐싱)
+  - 객체 상태가 바뀌지 않으면 항상 같은 결과
+
+---
+
+### 데이터 클래스
+
+- 자바에서는 롬복 어노테이션인 `@EqualsAndHashCode` 를 통해 `equals`, `hashCode` 를 구현할수 있다
+- 하지만 코틀린에서는 어노테이션 같은걸 붙이지 않더라도 데이터 클래스는 자동으로 `equals`, `hashCode`, `toString`을 생성해준다
+
+#### equals
+- 두개의 객체가 동등한지 검사하기 위해 사용된다.
+- 하지만 오버라이드를 하지 않는다면, 두개의 객체가 가르키는곳이 동일한 주소인지 검사를 하게된다.
+- 통상적으로 해당 함수를 오버라이드하여 객체의 멤버가 같다면 동일한 객체로 인지하도록 한다.
+
+---
+
+
+#### hashCode
+- 실행중에 객체의 유일한 Integer를 반환한다.
+- Object 클래스는 heap에 저장된 객체의 메모리 주소를 반환하도록 되어있다
+
+
+---
+
+#### equals 그리고 hashCode 
+- 동일한 객체는 동일한 메모리 주소를 갖는다는 의미.
+- `equals()` 가 오버라이드 된다면 `hashCode()` 또한 오버라이드 해야한다.
+- 서로의 관계를 정리하면 다음과 같다
+  - `equals()` 에 사용된 객체가 수정되지 않았다면, `hashCode()`는 항상 동일한 정수값을 반환해야한다.
+  - 두 객체가 `equals()` 에 의해 동일하다면, 두 객체는 `hashCode()` 값도 일치해야한다
+  - 두 객체가 `equals()` 에 의해 동일하지 않다면, 두 객체는 `hashCode()` 값은 일치하지 않아도 된다. 
