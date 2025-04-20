@@ -527,3 +527,131 @@ fun main() {
 - 만약 이벤트 리스너가 이벤트를 처리하다가 자신의 리스너 등록을 해제해야 할 경우 직접 참조해서 해제를 못 해주기 때문에 람다가 아닌 익명 객체를 사용해야 한다
   - 익명 객체 안에서는 `this`가 그 익명 객체 인스턴스 자신을 가리쳐 참조가 가능하기 때문
 
+### 코틀린 SAM 인터페이스
+- 코틀린에서 함수형 인터페이스를 사용해야 할 때 자바와는 다르게 모든 인터페이스를 람다로 변환해주는 기능(SAM 변환)을 제공하지 않기 때문에 명시적으로 `fun interface` 키워드로 정의해줘야 한다
+  - 사실 코틀린은 함수 타입이 일급 시민이기에 인터페이스 대신 아예 함수 타입을 쓰는 일이 더 많다
+  - 다만 함수 타입을 명시적으로 적고 싶은 경우를 대비한 기능이다
+- `fun interface`를 사용할 때에는 반드시 하나의 추방 메서드만 가져야 한다
+  - 이 함수형 인터페이스 타입의 파라미터를 받는 함수가 있을 때 람다 구현이나 람다에 대한 참조를 직접 넘길 수 있다.
+    - 컴파일러가 동적으로 인터페이스 구현을 인스턴스화해준다
+
+```kotlin
+fun interface IntCondition {
+    fun check(i : Int): Boolean // 추상 메서드는 반드시 하나
+    fun checkString(s: String) = check(s.toInt())
+    fun checkChar(c: Char) = check(c.digitToInt())
+}
+
+fun checkCondition(i: Int, condition: IntCondition) = condition.check(i)
+
+fun main() {
+    // 1. 람다 직접 사용
+    checkCondition(5) { it % 2 != 0 } // false
+    
+    // 2. 시그니처가 일치하는 람다에 대한 참조 사용
+    val isOdd: (Int) -> Boolean = { it % 2 != 0 }
+    checkCondition(5, isOdd) // false
+}
+```
+- 자바에서 코틀린의 함수 타입을 사용할 때
+  - `fun interface`로 정의된 인터페이스는 단순한 람다로 호출 가능
+  - 일반 코틀린 함수 타입은 명시적으로 `Unit.INSTANCE`를 반환해줘야 한다
+
+
+## 수신 객체 지정 람다
+- 수신 객체를 명시하지 않고 람다의 본문 안에서 다른 객체의 메서드를 호출할 수 있게 해주는 기능
+
+### `with`
+- 코틀린은 `with` 라이브러리 함수를 통해 객체의 이름을 반복하지 않고도 그 객체애 대해 다양한 연산을 수행하도록 지원한다
+- `with`는 인자가 2개있는 라이브러리 함수로 첫 번째 인자를 수신 객체로 사용하고 두 번째 인자로 람다를 받는다
+- `with`의 수신 객체는 람다 안에서 `this`로 참조할 수 있고 `this.` 없이 메서드나 프로퍼티 이름만을 사용해 접근할 수도 있다
+```kotlin
+fun alphabet() = with(StringBuilder()) {    // this: StringBuilder
+    for (letter in 'A'..'Z') {
+        append(letter)
+        append(' ')
+    }
+    append("\nNow I know the alphabet!")
+    toString()
+}
+
+fun main() {
+    println(alphabet())
+}
+```
+
+**`with`의 수신 객체의 메서드와 `with`를 사용하는 클래스의 메서드가 이름이 같은 경우?**
+- `this` 참조 앞에 레이블을 붙여 호출하고 싶은 메서드를 명시해주면 된다
+  - `this@클래스이름.메서드()` 형태
+
+### `apply`
+- `with`와 비슷하지만 수신 객체를 항상 반환한다는 점이 다르다
+- 인스턴스를 만들면서 즉시 프로퍼티 중 일부를 초기화해야 하는 경우 유용하다
+  - 자바는 보통 별도의 Builder 객체로 이를 수행하지만 코틀린은 `apply`를 사용해 간단하게 처리할 수 있다
+```kotlin
+data class Person(val name: String, val age: Int, var hobby: String? = null)
+
+fun main() {
+    val person = Person("Alice", 30).apply { hobby = "Reading" }
+}
+```
+
+### 특정 수신 객체 지정 람다 사용 라이브러리
+- `buildString`
+  - StringBuilder 객체 만드는 일과 toString을 호출해주는 일을 알아서 해준다
+  - 인자는 수신 객체 지정 람다이고, 수신 객체는 항상 StringBuilder가 된다
+  ```kotlin
+  fun alphabet() = buildString {
+      for (letter in 'A'..'Z') {
+          append(letter)
+      }
+      append("\nNow I know the alphabet!")
+  }
+  ```
+
+- `buildList`, `buildSet`, `buildMap`
+```kotlin
+val fibonacci = buildList {
+    addAll(listOf(1, 1, 2))
+    add(3)
+    add(index = 0, element = 3)
+}
+
+val fruits = buildSet { 
+    add("Apple")
+    addAll(listOf("Apple", "Banana", "Cherry"))
+}
+
+val medals = buildMap {
+    put("Gold", 1)
+    putAll(listOf("Silver" to 2, "Bronze" to 3))
+}
+```
+
+### `also`
+- 마찬가지로 수신 객체를 받고 그 수신 객체에 대해 어떤 동작을 수행한 뒤 수신 객체를 돌려준다
+  - 다른 점은 `also`의 람다 안에서는 수신 객체를 인자로 참조한다는 점으로 이름을 부여하거나 `it`로 사용해야 한다
+- 체이닝 중간에 뭔가 수정해야 하거나 실행해야 할 로직이 필요할 때 사용한다고 한다
+```kotlin
+fun main() {
+    val fruits = listOf("Apple", "Banana", "Cherry")
+    val uppercaseFruits = mutableListOf<String>()
+    val reversedLongFruits = fruits
+      .map { it.uppercase() }
+      .also { uppercaseFruits.addAll(it) }
+      .filter { it.length > 5 }
+      .also { println(it) }
+      .reversed()
+}
+```
+
+책의 예제가 잘 와닿지는 않는다. 뭔가 억지로 체이닝한 느낌.. 그냥 아래처럼 쓸 것 같기도 하다.
+```kotlin
+fun main() {
+    val fruits = listOf("Apple", "Banana", "Cherry")
+    val uppercaseFruits = fruits.map { it.uppercase() }
+    println(uppercaseFruits.filter { it.length > 5 })
+    val reversedLongFruits = uppercaseFruits.reversed()
+}
+```
+
