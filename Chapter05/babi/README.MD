@@ -165,3 +165,104 @@ val getAge = Person::age
 ```
 
 ---
+
+
+### 함수형 인터페이스: 단일 추상 메서드
+- 인터페이스 내에 추상 메서드가 단 하나뿐이라면, **단일 추상 메서드 인터페이스**라고 불린다.
+- 자바에서는 `Runnable`, `Callable` 등의 함수형 인터페이스들이 존재한다.
+
+---
+
+#### 람다를 파라미터로 전달
+- 명시적으로 객체를 선언하면, 매번 호출할 때마다 새로운 인스턴스가 생기게 된다.
+- 하지만 람다에서는 자신이 정의된 함수의 변수에 접근하지 않으면 함수가 호출될 때마다 람다에 해당하는 익명함수가 사용된다
+- 람다가 자신을 둘러싼 환경의 변수를 캡처하면 더이상 함수 호출에 같은 인스턴스를 사용할 수 없다.
+- 이럴때, 컴파일러는 호출마다 새로운 인스턴스를 만들고, 그 객체 안에 캡처한 변수를 저장한다.
+```kotlin
+fun handleComputation(id: String) {
+    postponeComputation(1000) { // 호출마다 새로운 Runnable 인스턴스 생성
+        println(id)     // id 캡처
+    }
+}
+```
+---
+
+#### SAM(Single Abstract Method) 변환
+- 컴파일러가 생성한 함수로 람다를 단일 추상 메서드 인터페이스의 인스턴스로 명시적으로 변환해준다.
+- 함수형 인터페이스에서 인스턴스를 반환하는 함수가 있다면 람다를 직접 반환할 수 없고, 람다를 SAM 생성자로 감싸야 한다.
+```kotlin
+// 일반적인 방식
+button.setOnClickListener(object : View.OnClickListener {
+  override fun onClick(v: View) {
+    println("Clicked!")
+  }
+})
+
+// SAM 변환을 이용한 람다 전달
+button.setOnClickListener { v ->
+  println("Clicked!")
+}
+
+```
+
+- SAM 생성자는 함수형 인터페이스의 이름과 같다. 
+- 값을 반환할 때 외에 람다로 생성한 함수형 인터페이스 인스턴스를 변수에 저장할때도 SAM 생성자를 사용할 수 있다.
+- JAVA의 함수형 인터페이스의 인스턴스를 반환 하고 싶을 경우 사용한다
+- 컴파일러가 자동 생성 해 준다
+ 
+---
+
+### 수신 객체 지정 람다
+
+#### with
+- 객체 선언이후, 이름을 반복하지 않고 해당 객체에 연산을 하는 기능이다.
+```kotlin
+fun alphabet(): String {
+    val builder = StringBuilder()
+  return with(stringBuilder) {
+      for (letter in 'A'..'Z'){
+          this.append(letter) // 여기서 this 는 `val builder = StringBuilder()` 가 된다
+      }
+  }
+}
+```
+- 그리고 `with` 구문 내에서는 `this`를 생략해도 상관없다.
+```kotlin
+fun alphabet(): String {
+    val builder = StringBuilder()
+  return with(stringBuilder) {
+      for (letter in 'A'..'Z'){
+          append(letter) // 동일
+      }
+  }
+}
+```
+- `with`가 반환하는 값은 람다 코드를 실행한 결과며, 결과는 람다식의 본문의 마지막 식의 값이다.
+- 하지만 람다의 결과 대신, **수신 객체**가 필요하다면 `apply` 라이브러리 함수를 사용하면 된다
+---
+
+#### apply
+
+- `with` 과 거의 비슷한 기능을 하지만, `apply`는  **수신 객체**를 반환한다.
+- 아까 위의 `with` 에서의 `alphabet()`함수를 재정의 해본다면 다음과 같다.
+```kotlin
+fun alphabet() = StringBuilder().apply {
+    for (letter in 'A'..'Z') {
+        append(letter)
+    }
+}
+```
+- 인스턴스를 만들면서 바로 프로퍼티를 초기화해야하는경우 쓰일수 있다.
+---
+
+#### also
+
+- `also` 함수도 수신 객체를 받으며, 동작을 한 이후 **수신 객체**를 돌려준다
+- 하지만 람다 안에서는 수신 객체를 인자로 참조하여야한다. (디폴트 이름인 `it`을 부여받음)
+- 개인적으로는 로그 남길때 유용하게 사용했다
+```kotlin
+val file = File()
+              .also{
+                  logService.addLog(it)
+              }
+```
