@@ -81,7 +81,7 @@ fun managerName(employee: Employee): String? = employee.manager?.name
 fun main() {
     val ceo = Employee("Da Boss", null)
     val developer = Employee("Bob Smith", ceo)
-    
+
     println(managerName(developer)) // Da Boss
     println(managerName(ceo)) // null
 }
@@ -127,7 +127,7 @@ fun main() {
     printShippingLabel(person)
     // Elsestr, 47
     // 80687, Munich, Germany
-  
+
     printShippingLabel(Person("John Doe", null))
     // IllegalArgumentException: No address
 }
@@ -173,7 +173,7 @@ class SelectableTextList(
 
 class CopyRowAction(val list: SelectableTextList) {
     fun isActionEnabled() = list.selectedIndex != null
-  
+
     // isActionEnabled()가 true일 때만 호출한다고 가정
     fun executeCopyRow() {
         val index = list.selectedIndex!!   // 절대 null이 아님을 단언
@@ -218,13 +218,14 @@ fun main() {
     var email: String? = "js.lee@naver.com"
     email?.let { sendEmailTo(it) } 
     // Sending email to js.lee@naver.com
-  
+
     email = null
     email?.let { sendEmailTo(it) }
 }
 ```
 
 **언제 어떤 스코프 함수를 써야할까**
+
 ![img.png](img.png)
 
 반환값으로 다시 분류해보면
@@ -267,12 +268,12 @@ class MyService {
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class MyTest {
     private lateinit var service: MyService // non-null 타입으로 지연 초기화
-        
+
     @BeforeAll
     fun setUp() {
         service = MyService() // 이 때 프로퍼티 초기화
     }
-        
+
     @Test
     fun test() {
         assertEquals("Action Done!", service.performAction())
@@ -304,7 +305,7 @@ fun main() {
 **null 값에 대해 세이프 콜 없이 `let`을 호출하면?**
 - `let`도 nullable한 타입의 값에 대해 호출할 수는 있지만 this가 null인지 판단하지는 않는다
 - 따라서 세이프 콜 없이 `let`을 호출하면 null 여부와 관계없이 호출되기 때문에 컴파일 에러가 발생할 수 있다
-- 항상 nullalbe한 타입에 대해 `let`을 호출할 때에는 세이프 콜을 사용해야 한다
+- 항상 nullalbe한 타입에 대해 `let`을 호출할 때에는 세이프 콜을 사용하는 게 좋다
 ```kotlin
 fun sendEmailTo(email: String) {
     println("Sending email to $email")
@@ -318,10 +319,146 @@ fun main() {
 }
 ```
 
+### 타입 파라미터의 널 가능성
+- 타입 파라미터? 함수나 클래스를 다룰 데이터 타입을 나중에 정할 수 있게 해주는 매개변수
+- 코틀린에서 함수나 클래스의 타입 파라미터는 기본적으로 널이 될 수 있다
+  - 즉, 모든 타입 파라미터 T는 기본적으로 null을 허용하기에 `T?`와 같은 의미를 가진다
 
+```kotlin
+fun <T> printHashCode(t: T) {
+    println(t?.hashCode()) // t가 null일 수 있으므로 세이프 콜 필요
+}
 
+fun main() {
+    printHashCode(null) // T는 Any?로 추론되어 null 허용
+}
+```
 
+**타입 파라미터에 upper bound 제약 걸기**
+- 타입 파라미터가 널이 될 수 없게 하려면 널이 될 수 없는 타입을 upper bound로 지정해 널이 될 수 있는 값을 거부한다
+- upper bound로 타입 파라미터로 받을 수 있는 타입의 최상위 타입을 지정하는 것
 
+```kotlin
+fun <T : Any> printHashCode(t: T) {
+    println(t.hashCode()) // t는 이제 null이 될 수 없으므로 세이프 콜 필요 없음
+}
 
+fun main() {
+    printHashCode("abc") // 정상 작동
+    printHashCode(null)
+    // 컴파일 에러: Null can not be a value of a non-null type parameter T
+}
+```
 
+### 자바와 코틀린의 상호 운용성
+- 자바의 코드를 코틀린에서 쓸 때 모든 값에 대해 null 체크가 필요할까?
+- 자바도 어노테이션으로 널 가능성을 명시하는데 코틀린도 그 정보를 활용한다
+  - `@Nullable String`은 `String?`으로, `@NotNull String`은 `String`으로
+
+**플랫폼 타입**
+- 자바에서 코틀린으로 가져온 타입 중 널 관련 정보를 알 수 없는 타입을 플랫폼 타입이라고 한다 
+- 코틀린 컴파일러는 플랫폼 타입을 널이 될 수 있는 타입으로도, 널이 될 수 없는 타입으로도 처리할 수 있다
+  - 플랫폼 타입 처리에 대한 책임은 개발자에게 있으므로 NPE 발생 가능성 있다
+- 플랫폼 타입은 타입 뒤에 `!`가 붙는데 코틀린 코드 자체에서 선언할 수는 없고 자바에서 가져온 플랫폼 타입에 대한 IDE나 컴파일러 오류 메세지에서 확인할 수 있다
+```java
+public class Person {
+    private final String name;
+    
+    public Person(String name) {
+        this.name = name;
+    }
+    
+    public String getName() {
+        return name;
+    }
+}
+```
+```kotlin
+// null 체크 없이 플랫폼 타입 처리
+fun yellAt(person: Person) {
+    println(person.name.uppercase() + "!!!")
+}
+
+// null-safe 플랫폼 타입 처리
+fun yellAtSafe(person: Person) {
+    println((person.name ?: "Anyone").uppercase() + "!!!")
+}
+
+fun main() {
+    val nullPerson: Person? = null
+    yellAt(nullPerson) // 런타임 에러: Null can not be a value of a non-null type parameter T
+    yellAtSafe(nullPerson) // ANYONE!!!
+}
+```
+
+**자바 라이브러리 사용 시 주의사항**
+- 자바 라이브러리를 사용할 때는 문서를 통해 메서드가 null을 반환할 수 있는지 확인해야 한다
+- 확실하지 않다면 널이 될 수 있는 타입으로 생각하고 처리하는 것이 안전하다
+
+**왜 안전하게 모든 타입을 nullable하게 처리하지 않고 플랫폼 타입을 도입했을까?**
+- 컴파일러가 널 가능성을 판단하지 못하므로 널이 절대 되지 않는 값도 불필요한 널 체크가 필요하다
+- 모든 자바 `ArrayList<String>`을 코틀린에서 `ArrayList<String?>?`으로 다루면 매번 원소 접근 시 null 체크와 안전한 캐스팅이 필요하다
+  - 널 체크 안전성보다 검사 비용이 커져 실용적이지 않다
+
+### 코틀린에서 자바 메서드를 오버라이드할 때
+- 코틀린에서 자바 메서드를 오버라이드할 때 그 메서드의 파라미터와 반환 타입을 nullable or non-null 한지 결정해야 한다
+- 둘 다 가능하므로 
+```java
+interface StringProcessor {
+    void process(String value);
+}
+```
+```kotlin
+// 널 가능성 없다고 판단하고 오버라이드
+class StringPrinter : StringProcessor {
+    override fun process(value: String) {
+        println(value)
+    }
+}
+
+// 널 가능성 있다고 판단하고 오버라이드
+class NullableStringPrinter : StringProcessor {
+    override fun process(value: String?) {
+        if (value != null) println(value)
+    }
+}
+```
+
+**자바 코드를 코틀린에서 사용할 때 Tip**
+1. 자바 코드를 직접 호출해서 쓰지 말고 한번 래핑해서 사용하자
+  - null 체크 후 null 안전하게 사용할 수 있도록 래핑해 단일 메서드로 제공하자
+2. 단일 진집점을 만들자
+  - 자바 코드 접근은 이 단 하나의 래핑된 코틀린 메서드에서만 일어나게 하자
+  - 나중에 자바 코드가 바뀌어도 코틀린은 이 단일 메서드만 수정하면 된다
+```java
+// Java 코드 (외부 라이브러리, 예: API 응답 DTO)
+public class ApiResponse {
+    public String getMessage() {
+        return null; // 실패하거나 응답이 잘못되면 null
+    }
+}
+```
+
+```kotlin
+// 안전한 단일 wrapping 메서드
+fun ApiResponse.safeMessage(): String {
+    return this.message ?: "(no message)"
+}
+
+fun handleApiResponseSafe(response: ApiResponse?) {
+    if (response == null) {
+      println("(empty response)")
+      return
+    }
+    println(response.safeMessage().uppercase())
+}
+
+fun main() {
+    val validResponse = ApiResponse()
+    val nullResponse: ApiResponse? = null
+  
+    handleApiResponseSafe(validResponse) // (no message)
+    handleApiResponseSafe(nullResponse)  // (empty response)
+}
+```
 
