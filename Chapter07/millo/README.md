@@ -287,18 +287,41 @@ class MyTest {
 **확장함수에서만 가능한 이유**
 - 코틀린에서 확장함수는 정적 static 함수로 컴파일 시점에 타입만 보고 확장 함수를 호출할지 결정한다
   - 즉, 인스턴스의 실제 값(null 여부)와 관계 없이 그냥 그 타입이면 확장함수를 호출할 수 있는 것
+  - 스스로 수신 객체가 null일 때 어떻게 처리해야하는지 알고 있어서 세이프 콜이 필요없다
 - 반면 멤버 호출은 동적으로 진짜 객체 인스턴스에 연결되어 있어야 해서 객체가 null이면 호출 자체가 불가능하다
   - 그래서 멤버 함수의 경우 먼저 null 체크를 한 뒤에 호출해야 한다
+```kotlin
+// nullable한 타입에 대한 확장함수
+fun String?.isNullOrEmpty() = this == null || this.isEmpty() // null 체크를 내부에서 명시적으로
+
+fun main() {
+    val str: String? = null
+    println(str.isNullOrEmpty()) // null을 넘겨줘도 예외 발생하지 않는다
+    println(str.length) // 컴파일 에러
+}
+```
+
+**null 값에 대해 세이프 콜 없이 `let`을 호출하면?**
+- `let`도 nullable한 타입의 값에 대해 호출할 수는 있지만 this가 null인지 판단하지는 않는다
+- 따라서 세이프 콜 없이 `let`을 호출하면 null 여부와 관계없이 호출되기 때문에 컴파일 에러가 발생할 수 있다
+- 항상 nullalbe한 타입에 대해 `let`을 호출할 때에는 세이프 콜을 사용해야 한다
+```kotlin
+fun sendEmailTo(email: String) {
+    println("Sending email to $email")
+}
+
+fun main() {
+    val recipient: String? = null
+    recipient.let { sendEmailTo(it) }
+    // 컴파일 에러: 타입이 일치하지 않습니다.
+    // 필요 항목: String 발견된 항목: String?
+}
+```
 
 
 
 
 
 
-
-
-
-lateinit : "나중에 수동으로 직접 초기화할게."
-lazy : "처음 쓰일 때 자동으로 초기화할게."
 
 
