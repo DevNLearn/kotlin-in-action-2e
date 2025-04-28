@@ -160,7 +160,7 @@ fun <T> copyElements(source: Collection<T>, target: MutableCollection<T>) {
 
 모든 코틀린 컬렉션은 그에 상응하는 자바 컬렉션 인터페이스의 인스턴스이다. 코틀린은 모든 자바 컬렉션 인터페이스마다 읽기 전용 인터페이스와 변경 가능한 인터페이스를 제공한다.
 
-![image.png](attachment:9882d141-85c5-4e0a-bd88-94c824c4fcff:image.png)
+![image.png](./image.png)
 
 | 컬렉션 타입 | 읽기 전용 타입 | 변경 가능 타입 |
 | --- | --- | --- |
