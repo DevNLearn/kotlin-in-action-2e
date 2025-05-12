@@ -600,4 +600,127 @@ fun readFirstLineFromFile(fileName: String): String {
 }
 ```
 
-**ex) useLines**
+**useLines 확장 함수**
+
+- 파일을 라인 단위로 읽으면서 자동으로 자원 해제를 보장
+- `BufferedReader`로부터 한 줄씩 읽는 `Sequence<String>`을 제공하면서 자원은 자동으로 닫아준다
+
+```kotlin
+public inline fun <T> Reader.useLines(block: (Sequence<String>) -> T): T =
+    buffered().use { block(it.lineSequence()) }
+```
+
+- Reader를 확장하면서 buffered()로 BufferedReader로 감싸서 use 사용
+- BufferedReader의 lineSequence로 lazy하게 한 줄씩 읽어 `Sequence<String>` 반환
+
+## 람다에서 반환
+
+### 람다 안의 `return`문
+
+```kotlin
+fun lookForAlice(people: List<Person>) {
+    people.forEach { 
+        if (it.name == "Alice") {
+            println("Found Alice, age ${it.age}")
+            return
+        }
+    }
+    println("Alice not found.")
+}
+```
+
+- 람다 안에서 `return`을 사용하면 람다에서만 반환되는 것이 아니라 그 람다를 호출하는 함수가 실행을 끝내고 반환된다
+    - 이렇게 자신을 둘러싼 블록(여기선 람다)보다 더 바깥에 있는 다른 블록을 반환하게 만드는 `return`문을 비로컬 `return`이라고 한다
+    - 마치 자바의 for문 안에서나 synchronized 블록 안에서 return 사용 시 블록을 끝내지 않고 메서드를 반환시키는 것과 동일하다
+- 람다 블록 안에서 바깥쪽 함수를 return으로 반환시킬 수 있으려면 람다를 인자로 받는 함수가 인라인 함수여야 한다
+    - 인라이닝되지 않는 함수는 변수에 저장될 수 있고, 그런 경우 함수가 반환된 다음에 나중에 람다를 실행할 수도 있기 때문에 원래 함수를 반환시키기 늦은 시점이 되어버린다
+
+### 레이블을 사용한 `return`
+
+람다식에서도 로컬 return을 사용할 수 있는데 마치 for 루프의 break와 비슷하게 로컬 return은 람다의 실행을 끝내고 람다를 호출한 코드의 실행을 이어간다
+
+- 이 때 비로컬 return과 구분하기 위해 return 뒤에 레이블을 달아줘야 한다
+
+**방법 1) 람다에 레이블 지정해주고, return 시 명시**
+
+```kotlin
+fun lookForAlice(people: List<Person>) {
+    people.forEach label@{  // 람다 레이블 지정
+        if (it.name == "Alice") return@label    // 람다 레이블 명시해서 리턴 
+        println("Found ${it.name}!")
+    }
+}
+```
+
+**방법 2) 람다를 인자로 받는 인라인 함수의 이름을 레이블로 사용**
+
+```kotlin
+fun lookForAlice(people: List<Person>) {
+    people.forEach { 
+        if (it.name != "Alice") return@forEach   // 인라인 함수를 레이블로 사용
+        println("Found ${it.name}!")
+    }
+}
+```
+
+**레이블이 붙은 `this` 식**
+
+수신 객체 지정 람다의 본문에는 this 참조를 사용해 수신 객체를 가리킬 수 있는데 이 때 수신 객체 지정 람다 앞에 레이블을 붙여주면 this 뒤에 그 레이블을 명시해 암시적인 수신 객체를 지정할 수 있다
+
+```kotlin
+fun main() {
+    println(StringBuilder().apply sb@{  // 람다에 레이블 붙여주고
+        listOf(1, 2, 3).apply {
+            this@sb.append(this.toString())  // this@레이블 키워드로 
+        }
+    })
+}
+```
+
+- 람다가 2중으로 적용되어 있는데 내부 람다에서 레이블을 사용해 외부 수신 객체를 지정한 것
+    - 내부 `this`가 `List<Int>`고, 외부 `this`가 `StringBuilder`인데 그냥 `this` 썼으면 `List<Int>`가 수신 객체로 지정됐겠지만 레이블로 외부 `this`로 명시해준 것
+
+### 익명함수: 기본적으로 로컬 return
+
+**익명함수?**
+
+- 이름이 없는 일반 함수처럼 생긴 함수로 `fun` 키워드를 사용하고 함수의 이름을 생략해 정의한다
+    - 파라미터 타입도 컴파일러가 추론할 수 있어 생략한다
+    - 일반함수와 마찬가지로 본문이 블록이 아닌 식일 경우 추론할 수 있기에 반환 타입도 생략할 수 있다
+        - ex) `val filter = fun(person) = person.age < 30`
+- 주로 고차 함수 인자로 전달할 때 사용한다
+
+**람다 vs 익명함수 return 차이**
+
+- 람다는 return이 기본적으로 비로컬 return이라서 람다를 둘러싼(호출한) 바깥 함수를 종료시킨다.
+- 반면 익명 함수 안에서 레이블이 붙지 않은 return 식은 익명 함수 자체를 반환시킬 뿐 둘러싼 외부 함수를 반환시키지 않는다.
+    - 단순히 `return`은 `fun` 키워드로 정의된 가장 안쪽 함수만 반환시킨다
+
+```kotlin
+fun lookForAlice(people: List<Person>) {
+    people.forEach(
+        fun(person) {
+            if (person.name == "Alice") return  // fun 정의된 내부 함수만 종료
+            println("${person.name} is not Alice")
+        }
+
+        // fun return 이후 forEach는 그대로 진행..
+    )
+}
+```
+
+**익명 함수 사용처**
+
+- 중첩된 람다에서 return 사용 시 레이블을 많이 붙여야 할때 익명 함수로 바꾸면 레이블 없이 깔끔해진다
+- 조용히 빠져나가기 좋은 도구라고 한다
+    - 더 헷갈리는데요?
+
+```kotlin
+people.forEach {
+    if (it.name == "Alice") return@forEach // 바깥 함수 종료 방지하려면 레이블 필요
+}
+
+people.forEach(fun(person) {
+    if (person.name == "Alice") return // 안전하게 해당 forEach만 탈출
+})
+```
