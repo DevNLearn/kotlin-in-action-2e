@@ -85,7 +85,7 @@
 | chap 5  | 2025.04.22 (화) | Noah  | [질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/19) |
 | chap 6  | 2025.04.22 (화) |  Ria  | [질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/19) |
 | chap 7  | 2025.04.29 (화) | Kevin | [질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/25) |
-| chap 8  | 2025.04.29 (화) |       | [질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/25) |
+| chap 8  | 2025.04.29 (화) | Noah  | [질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/25) |
 |    -    | 2025.05.06 (화) |   -   |                                    -                                     |
 | chap 9  | 2025.05.13 (화) | Kevin | [질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/34) |
 | chap 10 | 2025.05.20 (화) | Millo | [질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/34) |
