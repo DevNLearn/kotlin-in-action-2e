@@ -91,10 +91,10 @@
 | chap 10 | 2025.05.20 (화) | Millo | [질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/34) |
 | chap 11 | 2025.05.27 (화) | Rosy  | [질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/43) |
 |    -    | 2025.06.03 (화) |   -   |                                    -                                     |
-| chap 13 | 2025.06.10 (화) |       |                                [질문 링크]()                                 |
-| chap 14 | 2025.06.17 (화) |       |                                [질문 링크]()                                 |
-| chap 15 | 2025.06.24 (화) |       |                                [질문 링크]()                                 |
-| chap 16 | 2025.07.01 (화) |       |                                [질문 링크]()                                 |
-| chap 17 | 2025.07.08 (화) |       |                                [질문 링크]()                                 |
-| chap 18 | 2025.07.15 (화) |       |                                [질문 링크]()                                 |
-
+| chap 12 | 2025.06.10 (화) | Rosy  |[질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/46) |
+| chap 13 | 2025.06.17 (화) | Chuck |[질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/54) |
+| chap 14 | 2025.07.01 (화) | Chuck |[질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/62) |
+| chap 15 | 2025.07.08 (화) | Noah  |[질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/64) |
+| chap 16 | 2025.07.15 (화) |       |                                [질문 링크]()                                 |
+| chap 17 | 2025.07.22 (화) |       |                                [질문 링크]()                                 |
+| chap 18 | 2025.07.29 (화) |       |                                [질문 링크]()                                 |
