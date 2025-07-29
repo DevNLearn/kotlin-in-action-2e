@@ -95,6 +95,6 @@
 | chap 13 | 2025.06.17 (화) | Chuck |[질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/54) |
 | chap 14 | 2025.07.01 (화) | Chuck |[질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/62) |
 | chap 15 | 2025.07.08 (화) | Noah  |[질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/64) |
-| chap 16 | 2025.07.15 (화) |       |                                [질문 링크]()                                 |
-| chap 17 | 2025.07.22 (화) |       |                                [질문 링크]()                                 |
-| chap 18 | 2025.07.29 (화) |       |                                [질문 링크]()                                 |
+| chap 16 | 2025.07.15 (화) | Millo |[질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/65)|
+| chap 17 | 2025.07.22 (화) | Babi  |[질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/66)|
+| chap 18 | 2025.07.29 (화) | Babi  |[질문 링크](https://github.com/DevNLearn/kotlin-in-action-2e/discussions/67)|
