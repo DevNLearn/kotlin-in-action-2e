@@ -365,8 +365,7 @@ fun main() = runBlocking {
         .collect()
 }
 
-output> 0 1 2 3 4
-Handled: UnhappyFlowException
+output> 바로 에러발생;;
 ```
 
 
